@@ -5,6 +5,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
+import { sendOrderConfirmationEmails } from "./email";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -301,7 +302,34 @@ export const appRouter = router({
           status: 'pending',
         });
         
-        return { success: true, orderId: (result as any).insertId || 0 };
+        const orderId = (result as any).insertId || 0;
+        
+        // Send confirmation emails asynchronously
+        if (orderId) {
+          const companyEmail = process.env.COMPANY_EMAIL || 'admin@lahoradelas compras.com';
+          
+          sendOrderConfirmationEmails({
+            orderId,
+            customerName: input.customerName,
+            customerEmail: input.customerEmail || '',
+            customerPhone: input.customerPhone,
+            productName: product.name,
+            quantity: input.quantity,
+            unitPrice: input.unitPrice,
+            totalAmount: totalAmount,
+            commissionAmount: commissionAmount,
+            commissionPercentage: input.commissionPercentage,
+            deliveryAddress: input.deliveryAddress,
+            deliveryCity: input.deliveryCity,
+            paymentMethod: input.paymentMethod,
+            dropshipperName: ctx.user.name || 'Dropshipper',
+            dropshipperEmail: ctx.user.email || '',
+            companyEmail: companyEmail,
+            orderDate: new Date(),
+          }).catch(err => console.error('Error sending emails:', err));
+        }
+        
+        return { success: true, orderId };
       }),
     
     list: protectedProcedure.query(async ({ ctx }) => {
@@ -369,6 +397,26 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { productId, ...data } = input;
         await db.updateProductStrategy(productId, data);
+        return { success: true };
+      }),
+  }),
+
+  // ============= EMAIL NOTIFICATIONS =============
+  notifications: router({
+    getByOrder: protectedProcedure
+      .input(z.object({ orderId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getEmailNotificationsByOrderId(input.orderId);
+      }),
+    
+    getFailedNotifications: adminProcedure.query(async () => {
+      return await db.getFailedEmailNotifications();
+    }),
+    
+    retryFailed: adminProcedure
+      .input(z.object({ notificationId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.incrementEmailNotificationRetry(input.notificationId);
         return { success: true };
       }),
   }),

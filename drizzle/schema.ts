@@ -250,3 +250,24 @@ export const commissionSettings = mysqlTable("commissionSettings", {
 
 export type CommissionSetting = typeof commissionSettings.$inferSelect;
 export type InsertCommissionSetting = typeof commissionSettings.$inferInsert;
+
+
+/**
+ * Email notifications history for orders
+ */
+export const emailNotifications = mysqlTable("emailNotifications", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").references(() => orders.id),
+  recipientEmail: varchar("recipientEmail", { length: 320 }).notNull(),
+  recipientType: mysqlEnum("recipientType", ["customer", "dropshipper", "company"]).notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  status: mysqlEnum("status", ["pending", "sent", "failed", "bounced"]).default("pending").notNull(),
+  sentAt: timestamp("sentAt"),
+  failureReason: text("failureReason"),
+  retryCount: int("retryCount").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EmailNotification = typeof emailNotifications.$inferSelect;
+export type InsertEmailNotification = typeof emailNotifications.$inferInsert;

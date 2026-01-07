@@ -118,3 +118,17 @@
 - [x] Probar flujo completo de pedidos
 - [x] Probar cálculo de comisiones
 - [x] Probar notificaciones por correo
+
+
+## Sistema de Notificaciones por Correo - Fase 3 ✅ COMPLETADA
+
+- [x] Configurar servicio de correo (Nodemailer)
+- [x] Crear plantilla HTML para correo de cliente
+- [x] Crear plantilla HTML para correo de dropshipper
+- [x] Crear plantilla HTML para correo de empresa
+- [x] Implementar procedimiento tRPC para enviar notificaciones
+- [x] Agregar tabla de historial de notificaciones en BD
+- [x] Integrar envío de correos en creación de pedidos
+- [x] Crear panel de historial de notificaciones
+- [x] Implementar reintentos automáticos de envío
+- [x] Tests para sistema de notificaciones

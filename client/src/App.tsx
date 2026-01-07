@@ -12,6 +12,7 @@ import Recursos from "./pages/Recursos";
 import Soporte from "./pages/Soporte";
 import CreateOrder from "./pages/CreateOrder";
 import OrderTracking from "./pages/OrderTracking";
+import NotificationHistory from "./pages/NotificationHistory";
 import { WhatsAppButton } from "./components/WhatsAppButton";
 
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
       <Route path={"/create-order"} component={CreateOrder} />
       <Route path={"/producto/:id"} component={ProductDetail} />
       <Route path={"/admin"} component={Admin} />
+      <Route path={"/admin/notifications"} component={NotificationHistory} />
       <Route path={"/recursos"} component={Recursos} />
       <Route path={"/soporte"} component={Soporte} />
       <Route path={"/404"} component={NotFound} />

@@ -13,6 +13,7 @@ import {
   orders,
   productStrategies,
   commissionSettings,
+  emailNotifications,
   InsertProduct,
   InsertCategory,
   InsertProductResource,
@@ -22,7 +23,8 @@ import {
   InsertWalletTransaction,
   InsertOrder,
   InsertProductStrategy,
-  InsertCommissionSetting
+  InsertCommissionSetting,
+  InsertEmailNotification
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -478,4 +480,62 @@ export async function setCommissionSettings(data: InsertCommissionSetting) {
   if (!db) throw new Error("Database not available");
   
   return await db.insert(commissionSettings).values(data);
+}
+
+
+// ============= EMAIL NOTIFICATIONS =============
+
+export async function createEmailNotification(data: InsertEmailNotification) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.insert(emailNotifications).values(data);
+}
+
+export async function updateEmailNotificationStatus(
+  id: number,
+  status: "sent" | "failed" | "bounced",
+  failureReason?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const updateData: any = {
+    status,
+    sentAt: new Date(),
+  };
+  
+  if (failureReason) {
+    updateData.failureReason = failureReason;
+  }
+  
+  return await db.update(emailNotifications).set(updateData).where(eq(emailNotifications.id, id));
+}
+
+export async function getEmailNotificationsByOrderId(orderId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(emailNotifications).where(eq(emailNotifications.orderId, orderId));
+}
+
+export async function getFailedEmailNotifications() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(emailNotifications)
+    .where(and(
+      eq(emailNotifications.status, "failed"),
+      lte(emailNotifications.retryCount, 3)
+    ))
+    .limit(10);
+}
+
+export async function incrementEmailNotificationRetry(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.update(emailNotifications)
+    .set({ retryCount: sql`${emailNotifications.retryCount} + 1` })
+    .where(eq(emailNotifications.id, id));
 }
