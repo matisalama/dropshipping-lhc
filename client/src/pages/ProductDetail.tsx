@@ -1,0 +1,317 @@
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { 
+  Package, 
+  ArrowLeft,
+  TrendingUp,
+  Download,
+  AlertCircle,
+  CheckCircle2,
+  Truck,
+  Clock
+} from "lucide-react";
+import { Link, useParams } from "wouter";
+import { Skeleton } from "@/components/ui/skeleton";
+
+export default function ProductDetail() {
+  const { id } = useParams();
+  const { user } = useAuth();
+  const productId = parseInt(id || "0");
+
+  const { data: product, isLoading } = trpc.products.get.useQuery({ id: productId });
+  const { data: categories } = trpc.categories.list.useQuery();
+  const { data: resources } = trpc.resources.listByProduct.useQuery(
+    { productId },
+    { enabled: !!user }
+  );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b bg-card/50 backdrop-blur-sm">
+          <div className="container py-4">
+            <Skeleton className="h-8 w-48" />
+          </div>
+        </header>
+        <div className="container py-8">
+          <Skeleton className="h-96 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle>Producto no encontrado</CardTitle>
+            <CardDescription>El producto que buscas no existe</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/dashboard">
+              <Button>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Volver al Dashboard
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const margin = parseFloat(product.profitMargin || "0");
+  const isLowStock = product.stock <= product.lowStockThreshold;
+  const categoryName = categories?.find(c => c.id === product.categoryId)?.name;
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container py-4 flex items-center justify-between">
+          <Link href="/dashboard">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Volver al Dashboard
+            </Button>
+          </Link>
+          <Link href="/">
+            <div className="flex items-center gap-2 cursor-pointer">
+              <Package className="h-6 w-6 text-primary" />
+              <span className="font-bold">La Hora de las Compras</span>
+            </div>
+          </Link>
+        </div>
+      </header>
+
+      <div className="container py-8">
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Product Image */}
+          <div className="space-y-4">
+            <div className="aspect-square bg-muted rounded-lg overflow-hidden">
+              {product.imageUrl ? (
+                <img 
+                  src={product.imageUrl} 
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Package className="h-24 w-24 text-muted-foreground" />
+                </div>
+              )}
+            </div>
+
+            {/* Service Highlights */}
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="pt-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary text-primary-foreground p-2 rounded-lg">
+                    <Truck className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="font-semibold">97% Efectividad en Entregas</div>
+                    <div className="text-sm text-muted-foreground">Logística confiable</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="bg-accent text-accent-foreground p-2 rounded-lg">
+                    <Clock className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="font-semibold">Entrega en menos de 24hrs</div>
+                    <div className="text-sm text-muted-foreground">En Central, Paraguay</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Product Info */}
+          <div className="space-y-6">
+            <div className="space-y-4">
+              {categoryName && (
+                <Badge variant="outline">{categoryName}</Badge>
+              )}
+              {margin >= 30 && (
+                <Badge className="ml-2 bg-accent text-accent-foreground">
+                  Alto Margen de Ganancia
+                </Badge>
+              )}
+              
+              <h1 className="text-4xl font-bold">{product.name}</h1>
+              
+              {product.sku && (
+                <p className="text-sm text-muted-foreground">SKU: {product.sku}</p>
+              )}
+
+              {/* Stock Status */}
+              <div className="flex items-center gap-2">
+                {isLowStock ? (
+                  <>
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <span className="text-destructive font-medium">
+                      Stock bajo: {product.stock} unidades disponibles
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    <span className="text-muted-foreground">
+                      En stock: {product.stock} unidades disponibles
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Pricing Card */}
+            <Card className="border-2 border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  Análisis de Rentabilidad
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Precio mayorista:</span>
+                    <span className="text-xl font-semibold">
+                      ₲ {parseFloat(product.wholesalePrice).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Precio sugerido de venta:</span>
+                    <span className="text-xl font-semibold">
+                      ₲ {parseFloat(product.suggestedRetailPrice).toLocaleString()}
+                    </span>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="bg-accent/10 p-4 rounded-lg space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-lg">Tu ganancia por unidad:</span>
+                      <span className="text-2xl font-bold text-primary">
+                        ₲ {parseFloat(product.profitAmount).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Margen de ganancia:</span>
+                      <span className="text-xl font-bold text-accent">
+                        {margin.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Example calculations */}
+                  <div className="pt-2 space-y-1 text-sm text-muted-foreground">
+                    <div className="flex justify-between">
+                      <span>Si vendes 10 unidades:</span>
+                      <span className="font-medium text-foreground">
+                        ₲ {(parseFloat(product.profitAmount) * 10).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Si vendes 50 unidades:</span>
+                      <span className="font-medium text-foreground">
+                        ₲ {(parseFloat(product.profitAmount) * 50).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Si vendes 100 unidades:</span>
+                      <span className="font-medium text-foreground">
+                        ₲ {(parseFloat(product.profitAmount) * 100).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Description */}
+            {product.description && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Descripción del Producto</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {product.description}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Product Details */}
+            {(product.weight || product.dimensions) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Especificaciones</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {product.weight && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Peso:</span>
+                      <span className="font-medium">{product.weight} kg</span>
+                    </div>
+                  )}
+                  {product.dimensions && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Dimensiones:</span>
+                      <span className="font-medium">{product.dimensions}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Resources */}
+            {user && resources && resources.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Download className="h-5 w-5" />
+                    Recursos Descargables
+                  </CardTitle>
+                  <CardDescription>
+                    Materiales para promocionar este producto
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {resources.map((resource) => (
+                    <a
+                      key={resource.id}
+                      href={resource.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted transition-colors"
+                    >
+                      <div>
+                        <div className="font-medium">{resource.title}</div>
+                        {resource.description && (
+                          <div className="text-sm text-muted-foreground">
+                            {resource.description}
+                          </div>
+                        )}
+                      </div>
+                      <Download className="h-4 w-4 text-muted-foreground" />
+                    </a>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
