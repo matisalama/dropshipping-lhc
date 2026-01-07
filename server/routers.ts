@@ -137,13 +137,7 @@ export const appRouter = router({
         wholesalePrice: z.string(),
         suggestedRetailPrice: z.string(),
         stock: z.number().default(0),
-        lowStockThreshold: z.number().default(10),
         imageUrl: z.string().optional(),
-        imageUrls: z.string().optional(),
-        weight: z.string().optional(),
-        dimensions: z.string().optional(),
-        isActive: z.boolean().default(true),
-        isFeatured: z.boolean().default(false),
       }))
       .mutation(async ({ input }) => {
         await db.createProduct(input);
@@ -155,16 +149,9 @@ export const appRouter = router({
         id: z.number(),
         name: z.string().optional(),
         description: z.string().optional(),
-        sku: z.string().optional(),
-        categoryId: z.number().optional(),
         wholesalePrice: z.string().optional(),
         suggestedRetailPrice: z.string().optional(),
         stock: z.number().optional(),
-        lowStockThreshold: z.number().optional(),
-        imageUrl: z.string().optional(),
-        imageUrls: z.string().optional(),
-        weight: z.string().optional(),
-        dimensions: z.string().optional(),
         isActive: z.boolean().optional(),
         isFeatured: z.boolean().optional(),
       }))
@@ -192,49 +179,17 @@ export const appRouter = router({
       }),
   }),
 
-  // ============= PRODUCT RESOURCES =============
-  resources: router({
-    listByProduct: protectedProcedure
-      .input(z.object({ productId: z.number() }))
-      .query(async ({ input }) => {
-        return await db.getResourcesByProductId(input.productId);
-      }),
-    
-    create: adminProcedure
-      .input(z.object({
-        productId: z.number(),
-        title: z.string(),
-        description: z.string().optional(),
-        fileUrl: z.string(),
-        fileType: z.string().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        await db.createProductResource(input);
-        return { success: true };
-      }),
-    
-    delete: adminProcedure
-      .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        await db.deleteProductResource(input.id);
-        return { success: true };
-      }),
-  }),
-
   // ============= SUPPORT =============
   support: router({
-    listTickets: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role === 'admin') {
-        return await db.getAllSupportTickets();
-      }
-      return await db.getAllSupportTickets(ctx.user.id);
+    listFaqs: publicProcedure.query(async () => {
+      return await db.getAllFaqs();
     }),
     
     createTicket: protectedProcedure
       .input(z.object({
         subject: z.string(),
         message: z.string(),
-        priority: z.enum(['low', 'medium', 'high']).default('medium'),
+        priority: z.enum(['low', 'medium', 'high']),
       }))
       .mutation(async ({ ctx, input }) => {
         await db.createSupportTicket({
@@ -243,6 +198,10 @@ export const appRouter = router({
         });
         return { success: true };
       }),
+    
+    listTickets: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getAllSupportTickets(ctx.user.id);
+    }),
     
     updateTicket: adminProcedure
       .input(z.object({
@@ -253,45 +212,6 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
         await db.updateSupportTicket(id, data);
-        return { success: true };
-      }),
-    
-    listFaqs: publicProcedure.query(async () => {
-      return await db.getAllFaqs();
-    }),
-    
-    createFaq: adminProcedure
-      .input(z.object({
-        question: z.string(),
-        answer: z.string(),
-        category: z.string().optional(),
-        order: z.number().default(0),
-        isPublished: z.boolean().default(true),
-      }))
-      .mutation(async ({ input }) => {
-        await db.createFaq(input);
-        return { success: true };
-      }),
-    
-    updateFaq: adminProcedure
-      .input(z.object({
-        id: z.number(),
-        question: z.string().optional(),
-        answer: z.string().optional(),
-        category: z.string().optional(),
-        order: z.number().optional(),
-        isPublished: z.boolean().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        const { id, ...data } = input;
-        await db.updateFaq(id, data);
-        return { success: true };
-      }),
-    
-    deleteFaq: adminProcedure
-      .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        await db.deleteFaq(input.id);
         return { success: true };
       }),
   }),
@@ -316,6 +236,141 @@ export const appRouter = router({
         openTickets: tickets.filter(t => t.status === 'open').length,
       };
     }),
+  }),
+
+  // ============= WALLET =============
+  wallet: router({
+    getBalance: protectedProcedure.query(async ({ ctx }) => {
+      const wallet = await db.getOrCreateWallet(ctx.user.id);
+      return wallet;
+    }),
+    
+    getTransactions: protectedProcedure.query(async ({ ctx }) => {
+      const wallet = await db.getWalletByUserId(ctx.user.id);
+      if (!wallet) return [];
+      return await db.getWalletTransactions(wallet.id);
+    }),
+  }),
+
+  // ============= ORDERS =============
+  orders: router({
+    create: protectedProcedure
+      .input(z.object({
+        productId: z.number(),
+        customerName: z.string(),
+        customerPhone: z.string(),
+        customerEmail: z.string().email().optional(),
+        customerIdNumber: z.string().optional(),
+        deliveryAddress: z.string(),
+        deliveryCity: z.string().optional(),
+        deliveryDepartment: z.string().optional(),
+        deliveryPostalCode: z.string().optional(),
+        googleMapsLocation: z.string().optional(),
+        paymentMethod: z.enum(['card', 'transfer', 'tigo_money', 'cash', 'cash_on_delivery']),
+        quantity: z.number().min(1),
+        unitPrice: z.string(),
+        commissionPercentage: z.string(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const product = await db.getProductById(input.productId);
+        if (!product) throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found' });
+        
+        const totalAmount = (parseFloat(input.unitPrice) * input.quantity).toString();
+        const commissionAmount = (parseFloat(totalAmount) * parseFloat(input.commissionPercentage) / 100).toString();
+        
+        const result = await db.createOrder({
+          dropshipperId: ctx.user.id,
+          productId: input.productId,
+          customerName: input.customerName,
+          customerPhone: input.customerPhone,
+          customerEmail: input.customerEmail,
+          customerIdNumber: input.customerIdNumber,
+          deliveryAddress: input.deliveryAddress,
+          deliveryCity: input.deliveryCity,
+          deliveryDepartment: input.deliveryDepartment,
+          deliveryPostalCode: input.deliveryPostalCode,
+          googleMapsLocation: input.googleMapsLocation,
+          paymentMethod: input.paymentMethod as any,
+          quantity: input.quantity,
+          unitPrice: input.unitPrice,
+          totalAmount: totalAmount,
+          commissionPercentage: input.commissionPercentage,
+          commissionAmount: commissionAmount,
+          notes: input.notes,
+          status: 'pending',
+        });
+        
+        return { success: true, orderId: (result as any).insertId || 0 };
+      }),
+    
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getOrdersByDropshipper(ctx.user.id);
+    }),
+    
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const order = await db.getOrderById(input.id);
+        if (!order || order.dropshipperId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+        return order;
+      }),
+    
+    updateStatus: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded']),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateOrderStatus(input.id, input.status);
+        return { success: true };
+      }),
+    
+    allOrders: adminProcedure.query(async () => {
+      return await db.getAllOrders();
+    }),
+  }),
+
+  // ============= PRODUCT STRATEGIES =============
+  productStrategies: router({
+    get: publicProcedure
+      .input(z.object({ productId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getProductStrategy(input.productId);
+      }),
+    
+    create: adminProcedure
+      .input(z.object({
+        productId: z.number(),
+        salesHooks: z.string().optional(),
+        commonObjections: z.string().optional(),
+        salesTechniques: z.string().optional(),
+        marketingPhrases: z.string().optional(),
+        productFaqs: z.string().optional(),
+        keyBenefits: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.createProductStrategy(input);
+        return { success: true };
+      }),
+    
+    update: adminProcedure
+      .input(z.object({
+        productId: z.number(),
+        salesHooks: z.string().optional(),
+        commonObjections: z.string().optional(),
+        salesTechniques: z.string().optional(),
+        marketingPhrases: z.string().optional(),
+        productFaqs: z.string().optional(),
+        keyBenefits: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { productId, ...data } = input;
+        await db.updateProductStrategy(productId, data);
+        return { success: true };
+      }),
   }),
 });
 

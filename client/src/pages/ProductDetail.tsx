@@ -24,10 +24,6 @@ export default function ProductDetail() {
 
   const { data: product, isLoading } = trpc.products.get.useQuery({ id: productId });
   const { data: categories } = trpc.categories.list.useQuery();
-  const { data: resources } = trpc.resources.listByProduct.useQuery(
-    { productId },
-    { enabled: !!user }
-  );
 
   if (isLoading) {
     return (
@@ -274,41 +270,7 @@ export default function ProductDetail() {
               </Card>
             )}
 
-            {/* Resources */}
-            {user && resources && resources.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Download className="h-5 w-5" />
-                    Recursos Descargables
-                  </CardTitle>
-                  <CardDescription>
-                    Materiales para promocionar este producto
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {resources.map((resource) => (
-                    <a
-                      key={resource.id}
-                      href={resource.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted transition-colors"
-                    >
-                      <div>
-                        <div className="font-medium">{resource.title}</div>
-                        {resource.description && (
-                          <div className="text-sm text-muted-foreground">
-                            {resource.description}
-                          </div>
-                        )}
-                      </div>
-                      <Download className="h-4 w-4 text-muted-foreground" />
-                    </a>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
+
           </div>
         </div>
       </div>

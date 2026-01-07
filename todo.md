@@ -61,3 +61,60 @@
 - [x] Probar cálculo de ganancias
 - [x] Probar búsqueda y filtrado
 - [x] Documentar uso de la plataforma
+
+## Nuevas Funcionalidades - Fase 2 ✅ COMPLETADA
+
+### Billetera Virtual y Comisiones
+- [x] Agregar tablas de billetera, transacciones y comisiones a la BD
+- [x] Implementar cálculo automático de comisiones por venta
+- [x] Crear panel de billetera virtual en dashboard
+- [x] Mostrar historial de transacciones
+
+### Panel de Seguimiento de Pedidos
+- [x] Crear tabla de pedidos en BD
+- [x] Implementar panel de seguimiento para dropshippers
+- [x] Mostrar estado de pedidos en tiempo real
+- [x] Historial de pedidos
+
+### Panel de Administración de Dropshippers
+- [x] Crear vista de todos los dropshippers registrados
+- [x] Mostrar estadísticas por dropshipper
+- [x] Ver billetera y transacciones de cada dropshipper
+- [x] Aprobar/rechazar dropshippers
+
+### Mejoras en Ficha de Producto
+- [x] Destacar monto de beneficio para dropshipper
+- [x] Mostrar % de comisión
+- [x] Agregar sección de objeciones comunes
+- [x] Agregar ganchos de ventas
+- [x] Agregar técnicas de manejo de objeciones
+- [x] Agregar frases marketineras
+- [x] Agregar preguntas frecuentes del producto
+
+### Panel de Carga de Ventas
+- [x] Crear formulario de carga de ventas
+- [x] Campos: nombre cliente, teléfono WhatsApp, cédula/RUC
+- [x] Campo de dirección de entrega
+- [x] Integración con Google Maps
+- [x] Opciones de forma de pago
+- [x] Campo de correo electrónico
+- [x] Campos adicionales relevantes
+
+### Sistema de Notificaciones
+- [x] Configurar servicio de correo
+- [x] Enviar correo al cliente cuando se confirma pedido
+- [x] Enviar copia al vendedor (dropshipper)
+- [x] Enviar copia a la empresa
+- [x] Plantillas de correo profesionales
+
+### Integración WhatsApp
+- [x] Agregar botón de WhatsApp flotante
+- [x] Número: +595 994715200
+- [x] Integración en todas las páginas
+- [x] Mensaje predefinido para soporte
+
+### Testing y Finalización
+- [x] Crear tests para nuevas funcionalidades
+- [x] Probar flujo completo de pedidos
+- [x] Probar cálculo de comisiones
+- [x] Probar notificaciones por correo

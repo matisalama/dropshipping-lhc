@@ -8,11 +8,21 @@ import {
   productResources, 
   supportTickets, 
   faqs,
+  wallets,
+  walletTransactions,
+  orders,
+  productStrategies,
+  commissionSettings,
   InsertProduct,
   InsertCategory,
   InsertProductResource,
   InsertSupportTicket,
-  InsertFaq
+  InsertFaq,
+  InsertWallet,
+  InsertWalletTransaction,
+  InsertOrder,
+  InsertProductStrategy,
+  InsertCommissionSetting
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -339,4 +349,133 @@ export async function deleteFaq(id: number) {
   if (!db) throw new Error("Database not available");
   
   await db.delete(faqs).where(eq(faqs.id, id));
+}
+
+// ============= WALLET MANAGEMENT =============
+
+export async function getOrCreateWallet(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await db.select().from(wallets).where(eq(wallets.userId, userId)).limit(1);
+  
+  if (existing.length > 0) {
+    return existing[0];
+  }
+  
+  const result = await db.insert(wallets).values({ userId });
+  const newWallet = await db.select().from(wallets).where(eq(wallets.userId, userId)).limit(1);
+  return newWallet[0];
+}
+
+export async function getWalletByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(wallets).where(eq(wallets.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateWalletBalance(walletId: number, newBalance: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(wallets).set({ balance: newBalance }).where(eq(wallets.id, walletId));
+}
+
+export async function addWalletTransaction(data: InsertWalletTransaction) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.insert(walletTransactions).values(data);
+}
+
+export async function getWalletTransactions(walletId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(walletTransactions).where(eq(walletTransactions.walletId, walletId)).orderBy(desc(walletTransactions.createdAt));
+}
+
+// ============= ORDER MANAGEMENT =============
+
+export async function createOrder(data: InsertOrder) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.insert(orders).values(data);
+}
+
+export async function getOrderById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getOrdersByDropshipper(dropshipperId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(orders).where(eq(orders.dropshipperId, dropshipperId)).orderBy(desc(orders.createdAt));
+}
+
+export async function getAllOrders() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(orders).orderBy(desc(orders.createdAt));
+}
+
+export async function updateOrderStatus(id: number, status: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(orders).set({ status: status as any }).where(eq(orders.id, id));
+}
+
+// ============= PRODUCT STRATEGIES =============
+
+export async function getProductStrategy(productId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(productStrategies).where(eq(productStrategies.productId, productId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createProductStrategy(data: InsertProductStrategy) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.insert(productStrategies).values(data);
+}
+
+export async function updateProductStrategy(productId: number, data: Partial<InsertProductStrategy>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(productStrategies).set(data).where(eq(productStrategies.productId, productId));
+}
+
+// ============= COMMISSION SETTINGS =============
+
+export async function getCommissionSettings(productId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  if (productId) {
+    const result = await db.select().from(commissionSettings).where(eq(commissionSettings.productId, productId)).limit(1);
+    return result.length > 0 ? result : [];
+  }
+  
+  return await db.select().from(commissionSettings);
+}
+
+export async function setCommissionSettings(data: InsertCommissionSetting) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.insert(commissionSettings).values(data);
 }

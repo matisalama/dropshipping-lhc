@@ -125,3 +125,128 @@ export const faqs = mysqlTable("faqs", {
 
 export type Faq = typeof faqs.$inferSelect;
 export type InsertFaq = typeof faqs.$inferInsert;
+
+/**
+ * Dropshipper wallet for tracking earnings
+ */
+export const wallets = mysqlTable("wallets", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").references(() => users.id).notNull().unique(),
+  balance: decimal("balance", { precision: 12, scale: 2 }).default("0").notNull(),
+  totalEarnings: decimal("totalEarnings", { precision: 12, scale: 2 }).default("0").notNull(),
+  totalWithdrawn: decimal("totalWithdrawn", { precision: 12, scale: 2 }).default("0").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Wallet = typeof wallets.$inferSelect;
+export type InsertWallet = typeof wallets.$inferInsert;
+
+/**
+ * Wallet transactions (earnings, withdrawals, refunds)
+ */
+export const walletTransactions = mysqlTable("walletTransactions", {
+  id: int("id").autoincrement().primaryKey(),
+  walletId: int("walletId").references(() => wallets.id).notNull(),
+  orderId: int("orderId").references(() => orders.id),
+  type: mysqlEnum("type", ["sale_commission", "withdrawal", "refund", "adjustment"]).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  description: text("description"),
+  status: mysqlEnum("status", ["pending", "completed", "failed"]).default("completed").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type WalletTransaction = typeof walletTransactions.$inferSelect;
+export type InsertWalletTransaction = typeof walletTransactions.$inferInsert;
+
+/**
+ * Sales/Orders created by dropshippers
+ */
+export const orders = mysqlTable("orders", {
+  id: int("id").autoincrement().primaryKey(),
+  dropshipperId: int("dropshipperId").references(() => users.id).notNull(),
+  productId: int("productId").references(() => products.id).notNull(),
+  
+  // Customer information
+  customerName: varchar("customerName", { length: 255 }).notNull(),
+  customerPhone: varchar("customerPhone", { length: 20 }).notNull(),
+  customerEmail: varchar("customerEmail", { length: 320 }),
+  customerIdNumber: varchar("customerIdNumber", { length: 50 }), // Cédula o RUC
+  
+  // Delivery information
+  deliveryAddress: text("deliveryAddress").notNull(),
+  deliveryCity: varchar("deliveryCity", { length: 100 }),
+  deliveryDepartment: varchar("deliveryDepartment", { length: 100 }),
+  deliveryPostalCode: varchar("deliveryPostalCode", { length: 20 }),
+  googleMapsLocation: text("googleMapsLocation"), // JSON: {lat, lng, url}
+  
+  // Payment information
+  paymentMethod: mysqlEnum("paymentMethod", ["card", "transfer", "tigo_money", "cash", "cash_on_delivery"]).notNull(),
+  
+  // Order details
+  quantity: int("quantity").default(1).notNull(),
+  unitPrice: decimal("unitPrice", { precision: 10, scale: 2 }).notNull(),
+  totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }).notNull(),
+  commissionPercentage: decimal("commissionPercentage", { precision: 5, scale: 2 }).notNull(),
+  commissionAmount: decimal("commissionAmount", { precision: 12, scale: 2 }).notNull(),
+  
+  // Status
+  status: mysqlEnum("status", ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "refunded"]).default("pending").notNull(),
+  
+  // Notes
+  notes: text("notes"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Order = typeof orders.$inferSelect;
+export type InsertOrder = typeof orders.$inferInsert;
+
+/**
+ * Product sales strategies and objection handling
+ */
+export const productStrategies = mysqlTable("productStrategies", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").references(() => products.id).notNull().unique(),
+  
+  // Sales hooks
+  salesHooks: text("salesHooks"), // JSON array of sales hooks/opening lines
+  
+  // Common objections and responses
+  commonObjections: text("commonObjections"), // JSON array of {objection, response}
+  
+  // Sales techniques
+  salesTechniques: text("salesTechniques"), // JSON array of techniques
+  
+  // Marketing phrases
+  marketingPhrases: text("marketingPhrases"), // JSON array of marketing phrases
+  
+  // Product FAQs
+  productFaqs: text("productFaqs"), // JSON array of {question, answer}
+  
+  // Benefits to highlight
+  keyBenefits: text("keyBenefits"), // JSON array of key benefits
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProductStrategy = typeof productStrategies.$inferSelect;
+export type InsertProductStrategy = typeof productStrategies.$inferInsert;
+
+/**
+ * Commission configuration
+ */
+export const commissionSettings = mysqlTable("commissionSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").references(() => products.id).unique(),
+  defaultCommissionPercentage: decimal("defaultCommissionPercentage", { precision: 5, scale: 2 }).notNull(),
+  minCommissionAmount: decimal("minCommissionAmount", { precision: 10, scale: 2 }).default("0"),
+  maxCommissionAmount: decimal("maxCommissionAmount", { precision: 10, scale: 2 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CommissionSetting = typeof commissionSettings.$inferSelect;
+export type InsertCommissionSetting = typeof commissionSettings.$inferInsert;

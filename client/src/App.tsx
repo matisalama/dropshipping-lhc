@@ -10,6 +10,9 @@ import ProductDetail from "./pages/ProductDetail";
 import Admin from "./pages/Admin";
 import Recursos from "./pages/Recursos";
 import Soporte from "./pages/Soporte";
+import CreateOrder from "./pages/CreateOrder";
+import OrderTracking from "./pages/OrderTracking";
+import { WhatsAppButton } from "./components/WhatsAppButton";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -17,6 +20,8 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/dashboard"} component={Dashboard} />
+      <Route path={"/dashboard/orders"} component={OrderTracking} />
+      <Route path={"/create-order"} component={CreateOrder} />
       <Route path={"/producto/:id"} component={ProductDetail} />
       <Route path={"/admin"} component={Admin} />
       <Route path={"/recursos"} component={Recursos} />
@@ -43,6 +48,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <WhatsAppButton />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
