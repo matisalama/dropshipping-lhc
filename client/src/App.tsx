@@ -14,6 +14,10 @@ import CreateOrder from "./pages/CreateOrder";
 import OrderTracking from "./pages/OrderTracking";
 import NotificationHistory from "./pages/NotificationHistory";
 import { WhatsAppButton } from "./components/WhatsAppButton";
+import DropshipperDashboard from "./pages/DropshipperDashboard";
+import DropshipperSettings from "./pages/DropshipperSettings";
+import DropshipperIssues from "./pages/DropshipperIssues";
+import DropshipperTools from "./pages/DropshipperTools";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -28,6 +32,13 @@ function Router() {
       <Route path={"/admin/notifications"} component={NotificationHistory} />
       <Route path={"/recursos"} component={Recursos} />
       <Route path={"/soporte"} component={Soporte} />
+      
+      {/* Dropshipper Routes */}
+      <Route path={"/dropshipper/dashboard"} component={DropshipperDashboard} />
+      <Route path={"/dropshipper/configuracion"} component={DropshipperSettings} />
+      <Route path={"/dropshipper/problemas"} component={DropshipperIssues} />
+      <Route path={"/dropshipper/herramientas"} component={DropshipperTools} />
+      
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

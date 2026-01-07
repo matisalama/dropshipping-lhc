@@ -132,3 +132,70 @@
 - [x] Crear panel de historial de notificaciones
 - [x] Implementar reintentos automáticos de envío
 - [x] Tests para sistema de notificaciones
+
+
+## Sistema de Roles y Permisos - Fase 4 ✅ COMPLETADA
+
+### Base de Datos y Backend
+- [x] Agregar tabla de permisos en BD
+- [x] Agregar tabla de roles en BD
+- [x] Agregar tabla de relación roles-permisos
+- [x] Extender tabla de usuarios con campo de rol
+- [x] Crear funciones de BD para gestionar permisos
+
+### Autenticación y Autorización
+- [x] Implementar middleware de verificación de permisos
+- [x] Crear procedimientos tRPC protegidos por permiso
+- [x] Validar permisos en rutas del frontend
+- [x] Crear hook de usePermission para componentes
+
+### Panel de Gestión de Usuarios (Admin)
+- [x] Crear página de gestión de usuarios
+- [x] Listar todos los usuarios con sus roles
+- [x] Asignar/cambiar roles a usuarios
+- [x] Crear/editar permisos personalizados
+- [x] Ver historial de cambios de permisos
+
+### Dashboard de Dropshippers Mejorado
+- [x] Mostrar cantidad de productos vendidos
+- [x] Mostrar pedidos entregados
+- [x] Mostrar total vendido en Gs
+- [x] Mostrar utilidad total acumulada
+- [x] Gráficos de ventas por período
+- [x] Productos más vendidos
+- [x] Comisiones ganadas
+
+### Configuración Personal (Dropshippers)
+- [x] Formulario de datos personales
+- [x] Campo de cuenta bancaria
+- [x] Campo de número de teléfono
+- [x] Campo de email
+- [x] Información de comisiones y pagos
+- [x] Historial de retiros
+
+### Panel de Problemas de Pedidos
+- [x] Listar pedidos con problemas
+- [x] Categorías de problemas (dirección, producto, cliente)
+- [x] Sistema de tickets para resolver problemas
+- [x] Chat con soporte para problemas
+- [x] Historial de problemas resueltos
+
+### Secciones Innovadoras
+- [x] Herramienta de generador de contenido para redes sociales
+- [x] Plantillas de publicaciones Instagram/Facebook
+- [x] Calculadora de precios y márgenes
+- [x] Generador de códigos QR para productos
+- [x] Estadísticas de competencia (precios de mercado)
+- [x] Calendario de promociones sugeridas
+- [x] Gestor de clientes frecuentes
+
+### Protección de Rutas
+- [x] Proteger rutas de admin
+- [x] Proteger rutas de dropshippers
+- [x] Redirigir según rol
+- [x] Validar permisos en cada procedimiento tRPC
+
+### Testing
+- [x] Tests de permisos
+- [x] Tests de autenticación
+- [x] Tests de rutas protegidas

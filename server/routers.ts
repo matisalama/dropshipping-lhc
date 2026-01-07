@@ -6,6 +6,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import { sendOrderConfirmationEmails } from "./email";
+import { adminRouter } from "./routers/admin";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -420,6 +421,9 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // ============= ADMIN MANAGEMENT =============
+  adminManagement: adminRouter,
 });
 
 export type AppRouter = typeof appRouter;

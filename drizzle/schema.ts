@@ -271,3 +271,116 @@ export const emailNotifications = mysqlTable("emailNotifications", {
 
 export type EmailNotification = typeof emailNotifications.$inferSelect;
 export type InsertEmailNotification = typeof emailNotifications.$inferInsert;
+
+
+/**
+ * Permissions for role-based access control
+ */
+export const permissions = mysqlTable("permissions", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  category: varchar("category", { length: 50 }).notNull(), // e.g., 'products', 'users', 'orders', 'analytics'
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Permission = typeof permissions.$inferSelect;
+export type InsertPermission = typeof permissions.$inferInsert;
+
+/**
+ * Roles for grouping permissions
+ */
+export const roles = mysqlTable("roles", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  isSystem: boolean("isSystem").default(false).notNull(), // System roles cannot be deleted
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Role = typeof roles.$inferSelect;
+export type InsertRole = typeof roles.$inferInsert;
+
+/**
+ * Junction table for roles and permissions (many-to-many)
+ */
+export const rolePermissions = mysqlTable("rolePermissions", {
+  id: int("id").autoincrement().primaryKey(),
+  roleId: int("roleId").references(() => roles.id).notNull(),
+  permissionId: int("permissionId").references(() => permissions.id).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/**
+ * User roles (many-to-many relationship)
+ */
+export const userRoles = mysqlTable("userRoles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").references(() => users.id).notNull(),
+  roleId: int("roleId").references(() => roles.id).notNull(),
+  assignedAt: timestamp("assignedAt").defaultNow().notNull(),
+});
+
+/**
+ * Audit log for role and permission changes
+ */
+export const auditLog = mysqlTable("auditLog", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").references(() => users.id),
+  action: varchar("action", { length: 100 }).notNull(), // e.g., 'role_assigned', 'permission_granted'
+  targetUserId: int("targetUserId").references(() => users.id),
+  details: text("details"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AuditLog = typeof auditLog.$inferSelect;
+export type InsertAuditLog = typeof auditLog.$inferInsert;
+
+/**
+ * Dropshipper profile information
+ */
+export const dropshipperProfiles = mysqlTable("dropshipperProfiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").references(() => users.id).unique().notNull(),
+  bankAccountName: text("bankAccountName"),
+  bankAccountNumber: varchar("bankAccountNumber", { length: 50 }),
+  bankCode: varchar("bankCode", { length: 20 }),
+  bankName: text("bankName"),
+  documentNumber: varchar("documentNumber", { length: 50 }),
+  documentType: varchar("documentType", { length: 20 }), // 'cedula' or 'ruc'
+  businessDescription: text("businessDescription"),
+  socialMediaLinks: text("socialMediaLinks"), // JSON string
+  totalSalesCount: int("totalSalesCount").default(0).notNull(),
+  totalDelivered: int("totalDelivered").default(0).notNull(),
+  totalSalesAmount: decimal("totalSalesAmount", { precision: 15, scale: 2 }).default("0").notNull(),
+  totalEarnings: decimal("totalEarnings", { precision: 15, scale: 2 }).default("0").notNull(),
+  averageRating: decimal("averageRating", { precision: 3, scale: 2 }).default("5").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DropshipperProfile = typeof dropshipperProfiles.$inferSelect;
+export type InsertDropshipperProfile = typeof dropshipperProfiles.$inferInsert;
+
+/**
+ * Order issues/problems tracking
+ */
+export const orderIssues = mysqlTable("orderIssues", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").references(() => orders.id).notNull(),
+  issueType: mysqlEnum("issueType", ["wrong_address", "product_complaint", "delivery_delay", "customer_complaint", "other"]).notNull(),
+  description: text("description").notNull(),
+  status: mysqlEnum("status", ["open", "in_progress", "resolved", "closed"]).default("open").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high"]).default("medium").notNull(),
+  reportedBy: int("reportedBy").references(() => users.id),
+  assignedTo: int("assignedTo").references(() => users.id),
+  resolution: text("resolution"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  resolvedAt: timestamp("resolvedAt"),
+});
+
+export type OrderIssue = typeof orderIssues.$inferSelect;
+export type InsertOrderIssue = typeof orderIssues.$inferInsert;

@@ -14,6 +14,13 @@ import {
   productStrategies,
   commissionSettings,
   emailNotifications,
+  permissions,
+  roles,
+  rolePermissions,
+  userRoles,
+  auditLog,
+  dropshipperProfiles,
+  orderIssues,
   InsertProduct,
   InsertCategory,
   InsertProductResource,
@@ -24,7 +31,12 @@ import {
   InsertOrder,
   InsertProductStrategy,
   InsertCommissionSetting,
-  InsertEmailNotification
+  InsertEmailNotification,
+  InsertPermission,
+  InsertRole,
+  InsertAuditLog,
+  InsertDropshipperProfile,
+  InsertOrderIssue
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -538,4 +550,225 @@ export async function incrementEmailNotificationRetry(id: number) {
   return await db.update(emailNotifications)
     .set({ retryCount: sql`${emailNotifications.retryCount} + 1` })
     .where(eq(emailNotifications.id, id));
+}
+
+
+// ============= ROLES AND PERMISSIONS =============
+
+export async function initializeDefaultRoles() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Check if roles already exist
+  const existingRoles = await db.select().from(roles).limit(1);
+  if (existingRoles.length > 0) return;
+  
+  // Create default roles
+  await db.insert(roles).values([
+    { name: 'admin', description: 'Administrator with full access', isSystem: true },
+    { name: 'dropshipper', description: 'Dropshipper user', isSystem: true },
+    { name: 'support', description: 'Support staff', isSystem: true },
+  ]);
+  
+  // Create default permissions
+  const defaultPermissions = [
+    // Product permissions
+    { name: 'view_products', description: 'View products', category: 'products' },
+    { name: 'create_products', description: 'Create products', category: 'products' },
+    { name: 'edit_products', description: 'Edit products', category: 'products' },
+    { name: 'delete_products', description: 'Delete products', category: 'products' },
+    
+    // User permissions
+    { name: 'view_users', description: 'View users', category: 'users' },
+    { name: 'manage_users', description: 'Manage users and roles', category: 'users' },
+    { name: 'manage_permissions', description: 'Manage permissions', category: 'users' },
+    
+    // Order permissions
+    { name: 'view_all_orders', description: 'View all orders', category: 'orders' },
+    { name: 'view_own_orders', description: 'View own orders', category: 'orders' },
+    { name: 'manage_orders', description: 'Manage orders', category: 'orders' },
+    
+    // Analytics permissions
+    { name: 'view_analytics', description: 'View analytics', category: 'analytics' },
+    { name: 'view_own_analytics', description: 'View own analytics', category: 'analytics' },
+  ];
+  
+  await db.insert(permissions).values(defaultPermissions);
+  
+  // Assign permissions to admin role
+  const adminRole = await db.select().from(roles).where(eq(roles.name, 'admin')).limit(1);
+  const allPermissions = await db.select().from(permissions);
+  
+  if (adminRole.length > 0) {
+    await db.insert(rolePermissions).values(
+      allPermissions.map(p => ({ roleId: adminRole[0].id, permissionId: p.id }))
+    );
+  }
+  
+  // Assign permissions to dropshipper role
+  const dropshipperRole = await db.select().from(roles).where(eq(roles.name, 'dropshipper')).limit(1);
+  const dropshipperPerms = allPermissions.filter(p => 
+    ['view_products', 'view_own_orders', 'view_own_analytics'].includes(p.name)
+  );
+  
+  if (dropshipperRole.length > 0) {
+    await db.insert(rolePermissions).values(
+      dropshipperPerms.map(p => ({ roleId: dropshipperRole[0].id, permissionId: p.id }))
+    );
+  }
+}
+
+export async function getUserRoles(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const userRolesList = await db.select({
+    role: roles,
+  })
+  .from(userRoles)
+  .innerJoin(roles, eq(userRoles.roleId, roles.id))
+  .where(eq(userRoles.userId, userId));
+  
+  return userRolesList.map(ur => ur.role);
+}
+
+export async function getUserPermissions(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const userPerms = await db.select({
+    permission: permissions,
+  })
+  .from(userRoles)
+  .innerJoin(roles, eq(userRoles.roleId, roles.id))
+  .innerJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
+  .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+  .where(eq(userRoles.userId, userId));
+  
+  return userPerms.map(up => up.permission);
+}
+
+export async function hasPermission(userId: number, permissionName: string): Promise<boolean> {
+  const userPerms = await getUserPermissions(userId);
+  return userPerms.some(p => p.name === permissionName);
+}
+
+export async function assignRoleToUser(userId: number, roleId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Remove existing roles
+  await db.delete(userRoles).where(eq(userRoles.userId, userId));
+  
+  // Assign new role
+  await db.insert(userRoles).values({ userId, roleId });
+}
+
+export async function getAllRoles() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(roles);
+}
+
+export async function getRoleWithPermissions(roleId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const roleData = await db.select().from(roles).where(eq(roles.id, roleId)).limit(1);
+  if (roleData.length === 0) return null;
+  
+  const rolePerms = await db.select({
+    permission: permissions,
+  })
+  .from(rolePermissions)
+  .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+  .where(eq(rolePermissions.roleId, roleId));
+  
+  return {
+    ...roleData[0],
+    permissions: rolePerms.map(rp => rp.permission),
+  };
+}
+
+export async function createAuditLog(data: InsertAuditLog) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.insert(auditLog).values(data);
+}
+
+// ============= DROPSHIPPER PROFILES =============
+
+export async function getOrCreateDropshipperProfile(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await db.select().from(dropshipperProfiles).where(eq(dropshipperProfiles.userId, userId)).limit(1);
+  
+  if (existing.length > 0) {
+    return existing[0];
+  }
+  
+  await db.insert(dropshipperProfiles).values({ userId });
+  const created = await db.select().from(dropshipperProfiles).where(eq(dropshipperProfiles.userId, userId)).limit(1);
+  
+  return created[0];
+}
+
+export async function updateDropshipperProfile(userId: number, data: Partial<InsertDropshipperProfile>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.update(dropshipperProfiles)
+    .set(data)
+    .where(eq(dropshipperProfiles.userId, userId));
+}
+
+export async function getDropshipperProfile(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(dropshipperProfiles).where(eq(dropshipperProfiles.userId, userId)).limit(1);
+}
+
+// ============= ORDER ISSUES =============
+
+export async function createOrderIssue(data: InsertOrderIssue) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.insert(orderIssues).values(data);
+}
+
+export async function getOrderIssues(orderId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(orderIssues).where(eq(orderIssues.orderId, orderId));
+}
+
+export async function getOpenIssuesForDropshipper(dropshipperId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select({
+    issue: orderIssues,
+    order: orders,
+  })
+  .from(orderIssues)
+  .innerJoin(orders, eq(orderIssues.orderId, orders.id))
+  .where(and(
+    eq(orders.dropshipperId, dropshipperId),
+    eq(orderIssues.status, 'open')
+  ));
+}
+
+export async function updateOrderIssue(issueId: number, data: Partial<InsertOrderIssue>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.update(orderIssues)
+    .set(data)
+    .where(eq(orderIssues.id, issueId));
 }
