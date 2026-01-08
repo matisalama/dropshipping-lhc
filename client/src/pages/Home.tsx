@@ -38,7 +38,7 @@ export default function Home() {
                   </Link>
                 ) : (
                   <Link href="/dashboard">
-                    <Button variant="outline">Mi Dashboard</Button>
+                    <Button variant="outline">Mi Panel de Control</Button>
                   </Link>
                 )}
               </>
@@ -77,7 +77,7 @@ export default function Home() {
                 ) : (
                   <Link href={user?.role === 'admin' ? '/admin' : '/dashboard'}>
                     <Button size="lg" className="text-lg px-8">
-                      Ir al Dashboard <ArrowRight className="ml-2 h-5 w-5" />
+                      Ir al Panel de Control <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
                 )}
@@ -214,7 +214,7 @@ export default function Home() {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <BarChart3 className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle>Dashboard Completo</CardTitle>
+                <CardTitle>Panel de Control Completo</CardTitle>
                 <CardDescription>
                   Gestiona tus productos, visualiza stock en tiempo real y analiza tus mejores oportunidades
                 </CardDescription>
@@ -308,7 +308,7 @@ export default function Home() {
           ) : (
             <Link href={user?.role === 'admin' ? '/admin' : '/dashboard'}>
               <Button size="lg" variant="secondary" className="text-lg px-8">
-                Ir al Dashboard <ArrowRight className="ml-2 h-5 w-5" />
+                Ir al Panel de Control <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           )}
@@ -332,7 +332,7 @@ export default function Home() {
             <div className="space-y-4">
               <h4 className="font-semibold">Plataforma</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link></li>
+                <li><Link href="/dashboard" className="hover:text-foreground transition-colors">Panel de Control</Link></li>
                 <li><Link href="/productos" className="hover:text-foreground transition-colors">Productos</Link></li>
                 <li><Link href="/recursos" className="hover:text-foreground transition-colors">Recursos</Link></li>
               </ul>

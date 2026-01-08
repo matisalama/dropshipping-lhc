@@ -24,7 +24,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
+import { PanelDeControlLayoutSkeleton } from './PanelDeControlLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
@@ -37,7 +37,7 @@ const DEFAULT_WIDTH = 280;
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 480;
 
-export default function DashboardLayout({
+export default function PanelDeControlLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -53,7 +53,7 @@ export default function DashboardLayout({
   }, [sidebarWidth]);
 
   if (loading) {
-    return <DashboardLayoutSkeleton />
+    return <PanelDeControlLayoutSkeleton />
   }
 
   if (!user) {
@@ -90,22 +90,22 @@ export default function DashboardLayout({
         } as CSSProperties
       }
     >
-      <DashboardLayoutContent setSidebarWidth={setSidebarWidth}>
+      <PanelDeControlLayoutContent setSidebarWidth={setSidebarWidth}>
         {children}
-      </DashboardLayoutContent>
+      </PanelDeControlLayoutContent>
     </SidebarProvider>
   );
 }
 
-type DashboardLayoutContentProps = {
+type PanelDeControlLayoutContentProps = {
   children: React.ReactNode;
   setSidebarWidth: (width: number) => void;
 };
 
-function DashboardLayoutContent({
+function PanelDeControlLayoutContent({
   children,
   setSidebarWidth,
-}: DashboardLayoutContentProps) {
+}: PanelDeControlLayoutContentProps) {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();

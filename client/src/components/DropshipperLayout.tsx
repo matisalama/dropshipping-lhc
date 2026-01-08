@@ -22,7 +22,7 @@ interface DropshipperLayoutProps {
 
 const SIDEBAR_ITEMS = [
   {
-    label: "Dashboard",
+    label: "Panel de Control",
     icon: LayoutDashboard,
     href: "/dropshipper/dashboard",
     description: "Ventas y beneficios",

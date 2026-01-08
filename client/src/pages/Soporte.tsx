@@ -112,7 +112,7 @@ export default function Soporte() {
             {isAuthenticated ? (
               <>
                 <Link href={user?.role === 'admin' ? '/admin' : '/dashboard'}>
-                  <Button variant="ghost">Dashboard</Button>
+                  <Button variant="ghost">Panel de Control</Button>
                 </Link>
                 <Link href="/recursos">
                   <Button variant="ghost">Recursos</Button>

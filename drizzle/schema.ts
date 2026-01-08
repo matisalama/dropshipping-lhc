@@ -384,3 +384,37 @@ export const orderIssues = mysqlTable("orderIssues", {
 
 export type OrderIssue = typeof orderIssues.$inferSelect;
 export type InsertOrderIssue = typeof orderIssues.$inferInsert;
+
+
+/**
+ * Shipping costs by city
+ */
+export const shippingCosts = mysqlTable("shippingCosts", {
+  id: int("id").autoincrement().primaryKey(),
+  city: varchar("city", { length: 255 }).notNull().unique(),
+  standardCost: int("standardCost").notNull(), // Cost in Gs.
+  sameDayCost: int("sameDayCost").notNull(), // Cost in Gs. for same-day delivery
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ShippingCost = typeof shippingCosts.$inferSelect;
+export type InsertShippingCost = typeof shippingCosts.$inferInsert;
+
+/**
+ * Product media (photos, videos, links)
+ */
+export const productMedia = mysqlTable("productMedia", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull().references(() => products.id, { onDelete: "cascade" }),
+  type: mysqlEnum("type", ["photo", "video", "link"]).notNull(),
+  url: text("url").notNull(),
+  title: varchar("title", { length: 255 }),
+  description: text("description"),
+  displayOrder: int("displayOrder").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProductMedia = typeof productMedia.$inferSelect;
+export type InsertProductMedia = typeof productMedia.$inferInsert;

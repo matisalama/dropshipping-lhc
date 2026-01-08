@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
-export default function DropshipperDashboard() {
+export default function DropshipperPanelDeControl() {
   const { data: wallet } = trpc.wallet.getBalance.useQuery();
   const { data: orders } = trpc.orders.list.useQuery();
   const { data: products } = trpc.products.list.useQuery({});
@@ -44,7 +44,7 @@ export default function DropshipperDashboard() {
       <div className="p-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard de Ventas</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Panel de Control de Ventas</h1>
           <p className="text-gray-600">Resumen de tu desempeño y ganancias</p>
         </div>
 

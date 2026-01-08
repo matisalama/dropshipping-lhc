@@ -424,6 +424,19 @@ export const appRouter = router({
 
   // ============= ADMIN MANAGEMENT =============
   adminManagement: adminRouter,
+
+  // ============= SHIPPING COSTS =============
+  shippingCosts: router({
+    list: publicProcedure.query(async () => {
+      return await db.getShippingCosts();
+    }),
+    
+    getByCity: publicProcedure
+      .input(z.object({ city: z.string() }))
+      .query(async ({ input }) => {
+        return await db.getShippingCostByCity(input.city);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

@@ -106,7 +106,7 @@ export default function Recursos() {
             {isAuthenticated ? (
               <>
                 <Link href={user?.role === 'admin' ? '/admin' : '/dashboard'}>
-                  <Button variant="ghost">Dashboard</Button>
+                  <Button variant="ghost">Panel de Control</Button>
                 </Link>
                 <Link href="/soporte">
                   <Button variant="ghost">Soporte</Button>

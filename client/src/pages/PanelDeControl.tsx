@@ -24,7 +24,7 @@ import {
 import { Link, useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function Dashboard() {
+export default function PanelDeControl() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -116,7 +116,7 @@ export default function Dashboard() {
       <div className="container py-8 space-y-8">
         {/* Welcome Section */}
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Dashboard de Dropshipper</h1>
+          <h1 className="text-3xl font-bold">Panel de Control de Dropshipper</h1>
           <p className="text-muted-foreground">
             Explora nuestro catálogo de productos y encuentra las mejores oportunidades de ganancia
           </p>

@@ -199,3 +199,14 @@
 - [x] Tests de permisos
 - [x] Tests de autenticación
 - [x] Tests de rutas protegidas
+
+
+## Cambios Solicitados - Fase 5 ✅ COMPLETADA
+
+- [x] Cambiar "Dashboard" por "Panel de Control" en toda la plataforma
+- [x] Agregar tabla de costos de envío por ciudad
+- [x] Arreglar sistema de carga de fotos y videos
+- [x] Crear pestaña de Cargar Venta en perfil de dropshipper
+- [x] Integrar costos de envío en formulario de venta
+- [x] Poblar base de datos con costos de envío por ciudad
+- [x] Tests para nuevas funcionalidades

@@ -1,4 +1,4 @@
-import { eq, and, like, gte, lte, desc, sql, or } from "drizzle-orm";
+import { eq, and, like, gte, lte, desc, sql, or, asc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
@@ -21,6 +21,10 @@ import {
   auditLog,
   dropshipperProfiles,
   orderIssues,
+  productMedia,
+  shippingCosts,
+  InsertProductMedia,
+  InsertShippingCost,
   InsertProduct,
   InsertCategory,
   InsertProductResource,
@@ -771,4 +775,132 @@ export async function updateOrderIssue(issueId: number, data: Partial<InsertOrde
   return await db.update(orderIssues)
     .set(data)
     .where(eq(orderIssues.id, issueId));
+}
+
+
+// Product Media Functions
+export async function addProductMedia(data: {
+  productId: number;
+  type: "photo" | "video" | "link";
+  url: string;
+  title?: string;
+  description?: string;
+  displayOrder?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.insert(productMedia).values(data);
+}
+
+export async function getProductMedia(productId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select()
+    .from(productMedia)
+    .where(eq(productMedia.productId, productId))
+    .orderBy(asc(productMedia.displayOrder));
+}
+
+export async function deleteProductMedia(mediaId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.delete(productMedia).where(eq(productMedia.id, mediaId));
+}
+
+export async function updateProductMedia(mediaId: number, data: Partial<InsertProductMedia>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.update(productMedia)
+    .set(data)
+    .where(eq(productMedia.id, mediaId));
+}
+
+// Shipping Costs Functions
+export async function getShippingCosts() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(shippingCosts).orderBy(asc(shippingCosts.city));
+}
+
+export async function getShippingCostByCity(city: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.select()
+    .from(shippingCosts)
+    .where(eq(shippingCosts.city, city))
+    .limit(1);
+  
+  return result[0];
+}
+
+export async function addShippingCost(data: InsertShippingCost) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.insert(shippingCosts).values(data);
+}
+
+export async function updateShippingCost(city: string, data: Partial<InsertShippingCost>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.update(shippingCosts)
+    .set(data)
+    .where(eq(shippingCosts.city, city));
+}
+
+export async function seedShippingCosts() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const cities = [
+    { city: "Asunción", standardCost: 20000, sameDayCost: 25000 },
+    { city: "Fdo. de la Mora", standardCost: 25000, sameDayCost: 30000 },
+    { city: "Lambaré", standardCost: 25000, sameDayCost: 30000 },
+    { city: "San Lorenzo", standardCost: 25000, sameDayCost: 30000 },
+    { city: "Villa Elisa", standardCost: 25000, sameDayCost: 30000 },
+    { city: "Ñemby", standardCost: 25000, sameDayCost: 30000 },
+    { city: "Luque", standardCost: 25000, sameDayCost: 30000 },
+    { city: "M. Roque Alonso", standardCost: 25000, sameDayCost: 30000 },
+    { city: "Capiatá", standardCost: 35000, sameDayCost: 40000 },
+    { city: "San Antonio", standardCost: 35000, sameDayCost: 40000 },
+    { city: "Areguá", standardCost: 35000, sameDayCost: 40000 },
+    { city: "Limpio", standardCost: 35000, sameDayCost: 40000 },
+    { city: "Ypané", standardCost: 35000, sameDayCost: 40000 },
+    { city: "J. A. Saldivar", standardCost: 35000, sameDayCost: 40000 },
+    { city: "Villeta", standardCost: 35000, sameDayCost: 40000 },
+    { city: "Itauguá", standardCost: 35000, sameDayCost: 40000 },
+    { city: "Itá", standardCost: 35000, sameDayCost: 40000 },
+    { city: "Ypacaraí", standardCost: 35000, sameDayCost: 40000 },
+    { city: "Emboscada", standardCost: 35000, sameDayCost: 40000 },
+    { city: "San Bernardino", standardCost: 35000, sameDayCost: 40000 },
+    { city: "Nueva Italia", standardCost: 35000, sameDayCost: 40000 },
+    { city: "Pirayú", standardCost: 35000, sameDayCost: 40000 },
+    { city: "Pedrozo", standardCost: 35000, sameDayCost: 40000 },
+    { city: "Yaguarón", standardCost: 35000, sameDayCost: 40000 },
+    { city: "Loma Grande", standardCost: 40000, sameDayCost: 45000 },
+    { city: "Caacupé", standardCost: 40000, sameDayCost: 45000 },
+    { city: "Altos", standardCost: 40000, sameDayCost: 45000 },
+    { city: "Atyrá", standardCost: 40000, sameDayCost: 45000 },
+    { city: "Paraguarí", standardCost: 40000, sameDayCost: 45000 },
+  ];
+  
+  for (const city of cities) {
+    try {
+      await db.insert(shippingCosts).values(city).onDuplicateKeyUpdate({
+        set: {
+          standardCost: city.standardCost,
+          sameDayCost: city.sameDayCost,
+        },
+      });
+    } catch (error) {
+      console.warn(`Failed to insert shipping cost for ${city.city}:`, error);
+    }
+  }
 }

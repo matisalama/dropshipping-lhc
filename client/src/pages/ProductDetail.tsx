@@ -52,7 +52,7 @@ export default function ProductDetail() {
             <Link href="/dashboard">
               <Button>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Volver al Dashboard
+                Volver al Panel de Control
               </Button>
             </Link>
           </CardContent>
@@ -73,7 +73,7 @@ export default function ProductDetail() {
           <Link href="/dashboard">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Volver al Dashboard
+              Volver al Panel de Control
             </Button>
           </Link>
           <Link href="/">

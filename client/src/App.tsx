@@ -5,7 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
-import Dashboard from "./pages/Dashboard";
+import PanelDeControl from "./pages/PanelDeControl";
 import ProductDetail from "./pages/ProductDetail";
 import Admin from "./pages/Admin";
 import Recursos from "./pages/Recursos";
@@ -14,17 +14,18 @@ import CreateOrder from "./pages/CreateOrder";
 import OrderTracking from "./pages/OrderTracking";
 import NotificationHistory from "./pages/NotificationHistory";
 import { WhatsAppButton } from "./components/WhatsAppButton";
-import DropshipperDashboard from "./pages/DropshipperDashboard";
+import DropshipperPanelDeControl from "./pages/DropshipperPanelDeControl";
 import DropshipperSettings from "./pages/DropshipperSettings";
 import DropshipperIssues from "./pages/DropshipperIssues";
 import DropshipperTools from "./pages/DropshipperTools";
+import UploadSale from "./pages/UploadSale";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />
-      <Route path={"/dashboard"} component={Dashboard} />
+      <Route path={"/dashboard"} component={PanelDeControl} />
       <Route path={"/dashboard/orders"} component={OrderTracking} />
       <Route path={"/create-order"} component={CreateOrder} />
       <Route path={"/producto/:id"} component={ProductDetail} />
@@ -34,7 +35,8 @@ function Router() {
       <Route path={"/soporte"} component={Soporte} />
       
       {/* Dropshipper Routes */}
-      <Route path={"/dropshipper/dashboard"} component={DropshipperDashboard} />
+      <Route path={"/dropshipper/dashboard"} component={DropshipperPanelDeControl} />
+      <Route path={"/dropshipper/cargar-venta"} component={UploadSale} />
       <Route path={"/dropshipper/configuracion"} component={DropshipperSettings} />
       <Route path={"/dropshipper/problemas"} component={DropshipperIssues} />
       <Route path={"/dropshipper/herramientas"} component={DropshipperTools} />

@@ -217,7 +217,7 @@ export default function DropshipperTools() {
                 <div className="text-xs text-gray-600">Crea videos cortos para TikTok y Reels</div>
               </div>
               <div className="p-4 bg-gray-50 rounded-lg">
-                <div className="font-semibold text-sm mb-1">📊 Dashboard Avanzado</div>
+                <div className="font-semibold text-sm mb-1">📊 Panel de Control Avanzado</div>
                 <div className="text-xs text-gray-600">Análisis detallado de tu negocio</div>
               </div>
               <div className="p-4 bg-gray-50 rounded-lg">
