@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,9 +22,23 @@ export default function ProductDetail() {
   const { id } = useParams();
   const { user } = useAuth();
   const productId = parseInt(id || "0");
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const { data: product, isLoading } = trpc.products.get.useQuery({ id: productId });
   const { data: categories } = trpc.categories.list.useQuery();
+  
+  // Parse imageUrls
+  let imageUrls: string[] = [];
+  if (product?.imageUrls) {
+    try {
+      imageUrls = typeof product.imageUrls === 'string' 
+        ? JSON.parse(product.imageUrls) 
+        : product.imageUrls;
+    } catch (e) {
+      imageUrls = [];
+    }
+  }
+  const currentImage = imageUrls?.[currentImageIndex] || product?.imageUrl;
 
   if (isLoading) {
     return (
@@ -89,10 +104,10 @@ export default function ProductDetail() {
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Product Image */}
           <div className="space-y-4">
-            <div className="aspect-square bg-muted rounded-lg overflow-hidden">
-              {product.imageUrl ? (
+            <div className="aspect-square bg-muted rounded-lg overflow-hidden relative group">
+              {currentImage ? (
                 <img 
-                  src={product.imageUrl} 
+                  src={currentImage} 
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
@@ -100,6 +115,36 @@ export default function ProductDetail() {
                 <div className="w-full h-full flex items-center justify-center">
                   <Package className="h-24 w-24 text-muted-foreground" />
                 </div>
+              )}
+              
+              {/* Image Navigation Arrows */}
+              {imageUrls.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setCurrentImageIndex((prev) => (prev - 1 + imageUrls.length) % imageUrls.length)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Imagen anterior"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  
+                  <button
+                    onClick={() => setCurrentImageIndex((prev) => (prev + 1) % imageUrls.length)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Siguiente imagen"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                  
+                  {/* Image Counter */}
+                  <div className="absolute bottom-2 right-2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                    {currentImageIndex + 1} / {imageUrls.length}
+                  </div>
+                </>
               )}
             </div>
 
