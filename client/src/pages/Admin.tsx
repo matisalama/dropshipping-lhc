@@ -301,14 +301,21 @@ export default function Admin() {
           <TabsContent value="products" className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold">Gestión de Productos</h2>
-              <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={resetProductForm}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Nuevo Producto
+              <div className="flex gap-2">
+                <Link href="/admin/products">
+                  <Button variant="outline">
+                    <Edit className="mr-2 h-4 w-4" />
+                    Importar Excel & Editar
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                </Link>
+                <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button onClick={resetProductForm}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Nuevo Producto
+                    </Button>
+                    </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
                       {editingProduct ? "Editar Producto" : "Nuevo Producto"}
@@ -420,8 +427,9 @@ export default function Admin() {
                       {editingProduct ? "Actualizar" : "Crear"}
                     </Button>
                   </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
