@@ -7,6 +7,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import { sendOrderConfirmationEmails } from "./email";
 import { adminRouter } from "./routers/admin";
+import { registerUser, loginUser, verifyToken } from "./auth-service";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -21,11 +22,54 @@ export const appRouter = router({
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    
+    register: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        password: z.string().min(6),
+        name: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await registerUser(input.email, input.password, input.name);
+        if (!result.success) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: result.error });
+        }
+        
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, result.token, {
+          ...cookieOptions,
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+        
+        return result;
+      }),
+    
+    login: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        password: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await loginUser(input.email, input.password);
+        if (!result.success) {
+          throw new TRPCError({ code: 'UNAUTHORIZED', message: result.error });
+        }
+        
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, result.token, {
+          ...cookieOptions,
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+        
+        return result;
+      }),
+    
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    
     updateProfile: protectedProcedure
       .input(z.object({
         name: z.string().optional(),
@@ -307,27 +351,9 @@ export const appRouter = router({
         
         // Send confirmation emails asynchronously
         if (orderId) {
-          const companyEmail = process.env.COMPANY_EMAIL || 'admin@lahoradelas compras.com';
-          
-          sendOrderConfirmationEmails({
-            orderId,
-            customerName: input.customerName,
-            customerEmail: input.customerEmail || '',
-            customerPhone: input.customerPhone,
-            productName: product.name,
-            quantity: input.quantity,
-            unitPrice: input.unitPrice,
-            totalAmount: totalAmount,
-            commissionAmount: commissionAmount,
-            commissionPercentage: input.commissionPercentage,
-            deliveryAddress: input.deliveryAddress,
-            deliveryCity: input.deliveryCity,
-            paymentMethod: input.paymentMethod,
-            dropshipperName: ctx.user.name || 'Dropshipper',
-            dropshipperEmail: ctx.user.email || '',
-            companyEmail: companyEmail,
-            orderDate: new Date(),
-          }).catch(err => console.error('Error sending emails:', err));
+          sendOrderConfirmationEmails(orderId).catch(err => {
+            console.error('Failed to send confirmation emails:', err);
+          });
         }
         
         return { success: true, orderId };
@@ -337,34 +363,41 @@ export const appRouter = router({
       return await db.getOrdersByDropshipper(ctx.user.id);
     }),
     
-    get: protectedProcedure
+    getById: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .query(async ({ ctx, input }) => {
+      .query(async ({ input, ctx }) => {
         const order = await db.getOrderById(input.id);
-        if (!order || order.dropshipperId !== ctx.user.id) {
+        if (!order) return null;
+        
+        // Verify ownership
+        if (order.dropshipperId !== ctx.user.id && ctx.user.role !== 'admin') {
           throw new TRPCError({ code: 'FORBIDDEN' });
         }
+        
         return order;
       }),
     
-    updateStatus: adminProcedure
+    updateStatus: protectedProcedure
       .input(z.object({
         id: z.number(),
-        status: z.enum(['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded']),
+        status: z.enum(['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const order = await db.getOrderById(input.id);
+        if (!order) throw new TRPCError({ code: 'NOT_FOUND' });
+        
+        if (order.dropshipperId !== ctx.user.id && ctx.user.role !== 'admin') {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+        
         await db.updateOrderStatus(input.id, input.status);
         return { success: true };
       }),
-    
-    allOrders: adminProcedure.query(async () => {
-      return await db.getAllOrders();
-    }),
   }),
 
-  // ============= PRODUCT STRATEGIES =============
-  productStrategies: router({
-    get: publicProcedure
+  // ============= SALES STRATEGIES =============
+  strategies: router({
+    getByProductId: publicProcedure
       .input(z.object({ productId: z.number() }))
       .query(async ({ input }) => {
         return await db.getProductStrategy(input.productId);
@@ -373,70 +406,78 @@ export const appRouter = router({
     create: adminProcedure
       .input(z.object({
         productId: z.number(),
-        salesHooks: z.string().optional(),
-        commonObjections: z.string().optional(),
-        salesTechniques: z.string().optional(),
-        marketingPhrases: z.string().optional(),
-        productFaqs: z.string().optional(),
-        keyBenefits: z.string().optional(),
+        objections: z.array(z.object({
+          objection: z.string(),
+          response: z.string(),
+        })).optional(),
+        salesHooks: z.array(z.string()).optional(),
+        faqs: z.array(z.object({
+          question: z.string(),
+          answer: z.string(),
+        })).optional(),
       }))
       .mutation(async ({ input }) => {
         await db.createProductStrategy(input);
         return { success: true };
       }),
-    
-    update: adminProcedure
-      .input(z.object({
-        productId: z.number(),
-        salesHooks: z.string().optional(),
-        commonObjections: z.string().optional(),
-        salesTechniques: z.string().optional(),
-        marketingPhrases: z.string().optional(),
-        productFaqs: z.string().optional(),
-        keyBenefits: z.string().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        const { productId, ...data } = input;
-        await db.updateProductStrategy(productId, data);
-        return { success: true };
-      }),
   }),
-
-  // ============= EMAIL NOTIFICATIONS =============
-  notifications: router({
-    getByOrder: protectedProcedure
-      .input(z.object({ orderId: z.number() }))
-      .query(async ({ input }) => {
-        return await db.getEmailNotificationsByOrderId(input.orderId);
-      }),
-    
-    getFailedNotifications: adminProcedure.query(async () => {
-      return await db.getFailedEmailNotifications();
-    }),
-    
-    retryFailed: adminProcedure
-      .input(z.object({ notificationId: z.number() }))
-      .mutation(async ({ input }) => {
-        await db.incrementEmailNotificationRetry(input.notificationId);
-        return { success: true };
-      }),
-  }),
-
-  // ============= ADMIN MANAGEMENT =============
-  adminManagement: adminRouter,
 
   // ============= SHIPPING COSTS =============
-  shippingCosts: router({
-    list: publicProcedure.query(async () => {
+  shipping: router({
+    getCities: publicProcedure.query(async () => {
       return await db.getShippingCosts();
     }),
     
-    getByCity: publicProcedure
+    getCostByCity: publicProcedure
       .input(z.object({ city: z.string() }))
       .query(async ({ input }) => {
         return await db.getShippingCostByCity(input.city);
       }),
   }),
-});
 
-export type AppRouter = typeof appRouter;
+  // ============= PRODUCT MEDIA =============
+  productMedia: router({
+    getByProductId: publicProcedure
+      .input(z.object({ productId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getProductMedia(input.productId);
+      }),
+    
+    create: adminProcedure
+      .input(z.object({
+        productId: z.number(),
+        type: z.enum(['photo', 'video', 'link']),
+        url: z.string(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.addProductMedia(input);
+        return { success: true };
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteProductMedia(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ============= NOTIFICATIONS =============
+  notifications: router({
+    getHistory: protectedProcedure.query(async ({ ctx }) => {
+      const orders = await db.getOrdersByDropshipper(ctx.user.id);
+      const notifications: any[] = [];
+      for (const order of orders) {
+        const notifs = await db.getEmailNotificationsByOrderId(order.id);
+        notifications.push(...notifs);
+      }
+      return notifications;
+    }),
+    
+    getAdminHistory: adminProcedure.query(async () => {
+      return await db.getFailedEmailNotifications();
+    }),
+  }),
+});

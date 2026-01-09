@@ -4,12 +4,19 @@ import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean 
  * Core user table backing auth flow.
  * Extended with dropshipper-specific fields.
  */
+/**
+ * Users table with local authentication support
+ * passwordHash: bcrypt hash for local auth
+ * openId: optional for OAuth legacy support
+ * email: unique identifier for local auth
+ */
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
+  openId: varchar("openId", { length: 64 }).unique(),
+  email: varchar("email", { length: 320 }).unique().notNull(),
+  passwordHash: text("passwordHash"),
   name: text("name"),
-  email: varchar("email", { length: 320 }),
-  loginMethod: varchar("loginMethod", { length: 64 }),
+  loginMethod: varchar("loginMethod", { length: 64 }).default("local"),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
