@@ -276,8 +276,9 @@ class SDKServer {
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
 
-    // If user not in DB, sync from OAuth server automatically
-    if (!user) {
+    // Si el usuario no existe en la BD, intentar sincronizar desde OAuth
+    // PERO solo si OAUTH_SERVER_URL esta configurado (no es autenticacion local)
+    if (!user && ENV.oAuthServerUrl) {
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
         const email = userInfo.email || `oauth-${userInfo.openId}@example.com`;
@@ -292,6 +293,15 @@ class SDKServer {
       } catch (error) {
         console.error("[Auth] Failed to sync user from OAuth:", error);
         throw ForbiddenError("Failed to sync user info");
+      }
+    }
+
+    // Para autenticacion local, si el usuario no existe, buscarlo por ID
+    if (!user && !ENV.oAuthServerUrl) {
+      try {
+        user = await db.getUserById(parseInt(sessionUserId));
+      } catch (error) {
+        console.error("[Auth] Failed to get local user:", error);
       }
     }
 
