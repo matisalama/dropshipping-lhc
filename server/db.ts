@@ -923,3 +923,100 @@ export async function seedShippingCosts() {
     }
   }
 }
+
+// ============= PRODUCT UPSERT (para importación de Excel) =============
+
+export async function getProductBySku(sku: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.query.products.findFirst({
+    where: (products, { eq }) => eq(products.sku, sku),
+  });
+}
+
+export async function upsertProduct(data: InsertProduct) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  if (!data.sku) throw new Error("SKU is required for upsert");
+  
+  // Buscar producto existente por SKU
+  const existingProduct = await getProductBySku(data.sku);
+  
+  if (existingProduct) {
+    // Actualizar producto existente
+    await db.update(products).set({
+      ...data,
+      updatedAt: new Date(),
+    }).where(eq(products.sku, data.sku));
+    
+    return existingProduct.id;
+  } else {
+    // Crear nuevo producto
+    const result = await db.insert(products).values(data);
+    return result[0].insertId;
+  }
+}
+
+export async function importProductsFromExcel(productsData: Array<{
+  sku: string;
+  name: string;
+  marketingName?: string;
+  description?: string;
+  wholesalePrice: number;
+  suggestedRetailPrice: number;
+  previousPrice?: number;
+  stock: number;
+  imageUrls?: string;
+  categories?: string;
+  combinations?: string;
+  webUrl?: string;
+}>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const results = {
+    created: 0,
+    updated: 0,
+    failed: 0,
+    errors: [] as string[],
+  };
+  
+  for (const productData of productsData) {
+    try {
+      const insertData: InsertProduct = {
+        sku: productData.sku,
+        name: productData.name,
+        marketingName: productData.marketingName,
+        description: productData.description,
+        wholesalePrice: productData.wholesalePrice.toString(),
+        suggestedRetailPrice: productData.suggestedRetailPrice.toString(),
+        previousPrice: productData.previousPrice ? productData.previousPrice.toString() : undefined,
+        stock: productData.stock,
+        imageUrls: productData.imageUrls,
+        categories: productData.categories,
+        combinations: productData.combinations,
+        webUrl: productData.webUrl,
+      };
+      
+      const existingProduct = await getProductBySku(productData.sku);
+      
+      if (existingProduct) {
+        await db.update(products).set({
+          ...insertData,
+          updatedAt: new Date(),
+        }).where(eq(products.sku, productData.sku));
+        results.updated++;
+      } else {
+        await db.insert(products).values(insertData);
+        results.created++;
+      }
+    } catch (error) {
+      results.failed++;
+      results.errors.push(`Failed to import product ${productData.sku}: ${error}`);
+    }
+  }
+  
+  return results;
+}

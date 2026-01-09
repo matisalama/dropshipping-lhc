@@ -20,6 +20,7 @@ import DropshipperIssues from "./pages/DropshipperIssues";
 import DropshipperTools from "./pages/DropshipperTools";
 import UploadSale from "./pages/UploadSale";
 import { Login } from "./pages/Login";
+import { AdminProducts } from "./pages/AdminProducts";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -32,6 +33,7 @@ function Router() {
       <Route path={"/create-order"} component={CreateOrder} />
       <Route path={"/producto/:id"} component={ProductDetail} />
       <Route path={"/admin"} component={Admin} />
+      <Route path={"/admin/products"} component={AdminProducts} />
       <Route path={"/admin/notifications"} component={NotificationHistory} />
       <Route path={"/recursos"} component={Recursos} />
       <Route path={"/soporte"} component={Soporte} />

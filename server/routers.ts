@@ -223,6 +223,71 @@ export const appRouter = router({
         await db.updateProductStock(input.id, input.stock);
         return { success: true };
       }),
+    updateFull: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        marketingName: z.string().optional(),
+        wholesalePrice: z.string().optional(),
+        suggestedRetailPrice: z.string().optional(),
+        previousPrice: z.string().optional(),
+        stock: z.number().optional(),
+        imageUrls: z.string().optional(),
+        categories: z.string().optional(),
+        combinations: z.string().optional(),
+        webUrl: z.string().optional(),
+        isActive: z.boolean().optional(),
+        isFeatured: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateProduct(id, data);
+        return { success: true };
+      }),
+    
+    importExcel: adminProcedure
+      .input(z.object({
+        fileData: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          const { parseExcelFile, parseImageUrls, parseCategories, validateProduct } = await import('./excel-import');
+          const buffer = Buffer.from(input.fileData, 'base64');
+          const excelProducts = parseExcelFile(buffer);
+          
+          const productsToImport = excelProducts.map(product => {
+            const validation = validateProduct(product);
+            if (!validation.valid) {
+              throw new Error(`Validation failed for SKU ${product.sku}: ${validation.errors.join(', ')}`);
+            }
+            
+            return {
+              sku: product.sku,
+              name: product.nombre,
+              marketingName: product.nombreMarketing,
+              description: product.descripcion,
+              wholesalePrice: product.precio,
+              suggestedRetailPrice: product.precio,
+              previousPrice: product.precioAnterior > 0 ? product.precioAnterior : undefined,
+              stock: product.stock,
+              imageUrls: JSON.stringify(parseImageUrls(product.imagenes)),
+              categories: JSON.stringify(parseCategories(product.categorias)),
+              combinations: product.combinacion ? JSON.stringify([product.combinacion]) : undefined,
+              webUrl: product.urlWeb,
+            };
+          });
+          
+          const result = await db.importProductsFromExcel(productsToImport);
+          return { success: true, ...result };
+        } catch (error) {
+          console.error('[Products] Import failed:', error);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: `Import failed: ${error}`,
+          });
+        }
+      }),
   }),
 
   // ============= SUPPORT =============

@@ -53,12 +53,14 @@ export const products = mysqlTable("products", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
+  marketingName: text("marketingName"), // Nombre de marketing (breve descripción)
   sku: varchar("sku", { length: 100 }).unique(),
   categoryId: int("categoryId").references(() => categories.id),
   
   // Pricing
   wholesalePrice: decimal("wholesalePrice", { precision: 10, scale: 2 }).notNull(), // Precio mayorista
   suggestedRetailPrice: decimal("suggestedRetailPrice", { precision: 10, scale: 2 }).notNull(), // Precio sugerido de venta
+  previousPrice: decimal("previousPrice", { precision: 10, scale: 2 }), // Precio anterior para mostrar descuento
   
   // Stock management
   stock: int("stock").default(0).notNull(),
@@ -67,6 +69,15 @@ export const products = mysqlTable("products", {
   // Product media
   imageUrl: text("imageUrl"),
   imageUrls: text("imageUrls"), // JSON array of additional images
+  
+  // Categories (múltiples)
+  categories: text("categories"), // JSON array of category names
+  
+  // Combinations (talles, colores, tamaños, etc)
+  combinations: text("combinations"), // JSON array of combinations
+  
+  // Web URL
+  webUrl: text("webUrl"), // URL a la página web del producto
   
   // Product details
   weight: decimal("weight", { precision: 8, scale: 2 }), // in kg
