@@ -210,22 +210,28 @@ class SDKServer {
       const { payload } = await jwtVerify(cookieValue, secretKey, {
         algorithms: ["HS256"],
       });
-      const { openId, appId, name } = payload as Record<string, unknown>;
+      const { openId, appId, name, userId, email } = payload as Record<string, unknown>;
 
-      if (
-        !isNonEmptyString(openId) ||
-        !isNonEmptyString(appId) ||
-        !isNonEmptyString(name)
-      ) {
-        console.warn("[Auth] Session payload missing required fields");
-        return null;
+      // Soportar tokens de OAuth de Manus
+      if (isNonEmptyString(openId) && isNonEmptyString(appId) && isNonEmptyString(name)) {
+        return {
+          openId,
+          appId,
+          name,
+        };
       }
 
-      return {
-        openId,
-        appId,
-        name,
-      };
+      // Soportar tokens de autenticación local
+      if (isNonEmptyString(email) && typeof userId === 'number') {
+        return {
+          openId: String(userId),
+          appId: ENV.appId,
+          name: isNonEmptyString(name) ? name : email,
+        };
+      }
+
+      console.warn("[Auth] Session payload missing required fields");
+      return null;
     } catch (error) {
       console.warn("[Auth] Session verification failed", String(error));
       return null;
