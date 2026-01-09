@@ -930,9 +930,8 @@ export async function getProductBySku(sku: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  return await db.query.products.findFirst({
-    where: (products, { eq }) => eq(products.sku, sku),
-  });
+  const result = await db.select().from(products).where(eq(products.sku, sku)).limit(1);
+  return result[0] || null;
 }
 
 export async function upsertProduct(data: InsertProduct) {
