@@ -255,6 +255,7 @@ export default function PanelDeControl() {
                           <button
                             onClick={(e) => {
                               e.preventDefault();
+                              e.stopPropagation();
                               setCurrentImageIndex(prev => ({
                                 ...prev,
                                 [product.id]: (prev[product.id] || 0) - 1 < 0 ? imageUrls.length - 1 : (prev[product.id] || 0) - 1
@@ -271,6 +272,7 @@ export default function PanelDeControl() {
                           <button
                             onClick={(e) => {
                               e.preventDefault();
+                              e.stopPropagation();
                               setCurrentImageIndex(prev => ({
                                 ...prev,
                                 [product.id]: ((prev[product.id] || 0) + 1) % imageUrls.length
