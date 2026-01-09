@@ -254,7 +254,7 @@ export const appRouter = router({
         try {
           const { parseExcelFile, parseImageUrls, parseCategories, validateProduct } = await import('./excel-import');
           const buffer = Buffer.from(input.fileData, 'base64');
-          const excelProducts = parseExcelFile(buffer);
+          const excelProducts = await parseExcelFile(buffer);
           
           const productsToImport = excelProducts.map(product => {
             const validation = validateProduct(product);
