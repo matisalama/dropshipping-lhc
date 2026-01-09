@@ -262,11 +262,30 @@ export default function PanelDeControl() {
                 const margin = parseFloat(product.profitMargin || "0");
                 const isLowStock = product.stock <= product.lowStockThreshold;
                 const categoryName = categories?.find(c => c.id === product.categoryId)?.name;
+                
+                // Parse imageUrls from JSON string
+                let imageUrls: string[] = [];
+                if (product.imageUrls) {
+                  try {
+                    imageUrls = typeof product.imageUrls === 'string' 
+                      ? JSON.parse(product.imageUrls) 
+                      : product.imageUrls;
+                  } catch (e) {
+                    imageUrls = [];
+                  }
+                }
+                const firstImage = imageUrls?.[0];
 
                 return (
                   <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="aspect-square bg-muted relative">
-                      {product.imageUrl ? (
+                      {firstImage ? (
+                        <img 
+                          src={firstImage} 
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : product.imageUrl ? (
                         <img 
                           src={product.imageUrl} 
                           alt={product.name}
