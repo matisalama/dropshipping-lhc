@@ -28,11 +28,7 @@ export function AdminProducts() {
 
   const handleImport = async () => {
     if (!selectedFile) {
-      toast({
-        title: 'Error',
-        description: 'Por favor selecciona un archivo Excel',
-        variant: 'destructive',
-      });
+      toast.error('Por favor selecciona un archivo Excel');
       return;
     }
 
@@ -47,21 +43,14 @@ export function AdminProducts() {
         
         setImportResult(result);
         setSelectedFile(null);
-        toast({
-          title: 'Importación completada',
-          description: `Creados: ${result.created}, Actualizados: ${result.updated}, Errores: ${result.failed}`,
-        });
+        toast.success(`Importación completada - Creados: ${result.created}, Actualizados: ${result.updated}, Errores: ${result.failed}`);
         
         // Refrescar lista de productos
         productsQuery.refetch();
       };
       reader.readAsDataURL(selectedFile);
     } catch (error) {
-      toast({
-        title: 'Error en la importación',
-        description: String(error),
-        variant: 'destructive',
-      });
+      toast.error(`Error en la importación: ${error}`);
     } finally {
       setIsImporting(false);
     }
@@ -91,20 +80,13 @@ export function AdminProducts() {
         webUrl: editingProduct.webUrl,
       });
 
-      toast({
-        title: 'Producto actualizado',
-        description: 'Los cambios se han guardado correctamente',
-      });
+      toast.success('Producto actualizado correctamente');
 
       setIsEditing(false);
       setEditingProduct(null);
       productsQuery.refetch();
     } catch (error) {
-      toast({
-        title: 'Error al actualizar',
-        description: String(error),
-        variant: 'destructive',
-      });
+      toast.error(`Error al actualizar: ${error}`);
     }
   };
 
