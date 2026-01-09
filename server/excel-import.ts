@@ -1,5 +1,13 @@
-import * as XLSX from 'xlsx';
 import { Buffer } from 'buffer';
+
+let XLSX: any = null;
+
+async function getXLSX() {
+  if (!XLSX) {
+    XLSX = await import('xlsx');
+  }
+  return XLSX;
+}
 
 export interface ExcelProduct {
   sku: string;
@@ -18,13 +26,14 @@ export interface ExcelProduct {
 /**
  * Parsear archivo Excel y extraer datos de productos
  */
-export function parseExcelFile(buffer: Buffer): ExcelProduct[] {
+export async function parseExcelFile(buffer: Buffer): Promise<ExcelProduct[]> {
   try {
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    const xlsx = await getXLSX();
+    const workbook = xlsx.read(buffer, { type: 'buffer' });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     
     // Convertir a JSON
-    const rows = XLSX.utils.sheet_to_json(sheet);
+    const rows = xlsx.utils.sheet_to_json(sheet);
     
     // Mapear columnas del Excel a nuestro formato
     const products: ExcelProduct[] = rows.map((row: any) => ({
