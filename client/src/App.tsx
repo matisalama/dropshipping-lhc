@@ -19,12 +19,14 @@ import DropshipperSettings from "./pages/DropshipperSettings";
 import DropshipperIssues from "./pages/DropshipperIssues";
 import DropshipperTools from "./pages/DropshipperTools";
 import UploadSale from "./pages/UploadSale";
+import { Login } from "./pages/Login";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/login"} component={Login} />
       <Route path={"/dashboard"} component={PanelDeControl} />
       <Route path={"/dashboard/orders"} component={OrderTracking} />
       <Route path={"/create-order"} component={CreateOrder} />
